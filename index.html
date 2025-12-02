@@ -1,196 +1,673 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>ESP32 Dual Servo Control</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hệ thống cho cá ăn - 2 hồ</title>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      max-width: 480px;
-      margin: 20px auto;
-      padding: 0 12px;
-      background: #f5f5f5;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
     }
-    h2 {
-      text-align: center;
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
     }
+
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+    }
+
     .hidden {
       display: none;
     }
-    .card {
-      background: #fff;
-      border: 1px solid #ddd;
-      padding: 16px;
-      border-radius: 10px;
-      margin-bottom: 16px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+
+    /* LOGIN CARD */
+    .login-container {
+      max-width: 400px;
+      margin: 100px auto;
     }
-    input, button {
-      padding: 8px;
-      margin: 4px 0;
-      width: 100%;
-      box-sizing: border-box;
+
+    h2 {
+      color: #2563eb;
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #64748b;
+      margin-bottom: 25px;
       font-size: 14px;
     }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+
+    input[type="email"]:focus,
+    input[type="password"]:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
     button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
       cursor: pointer;
-      border-radius: 6px;
-      border: none;
-      background: #2563eb;
+      transition: all 0.3s;
+      margin-top: 10px;
+    }
+
+    #loginBtn {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
       color: white;
-      font-weight: 500;
     }
-    button:hover {
-      background: #1d4ed8;
+
+    #loginBtn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
     }
-    button.secondary {
-      background: #e5e7eb;
-      color: #111827;
+
+    #signupBtn {
+      background: white;
+      color: #3b82f6;
+      border: 2px solid #3b82f6;
     }
-    button.secondary:hover {
-      background: #d1d5db;
+
+    #signupBtn:hover {
+      background: #f0f9ff;
     }
-    #angleValue0, #angleValue1 {
+
+    .error {
+      color: #ef4444;
+      font-size: 14px;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    /* HEADER */
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .header h2 {
+      color: white;
+      font-size: 32px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .user-info {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      color: white;
+      padding: 15px 20px;
+      border-radius: 15px;
+      margin-top: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #logoutBtn {
+      width: auto;
+      padding: 8px 20px;
+      margin: 0;
+      background: rgba(255, 255, 255, 0.3);
+      color: white;
+      font-size: 14px;
+    }
+
+    #logoutBtn:hover {
+      background: rgba(255, 255, 255, 0.4);
+      transform: none;
+    }
+
+    /* DUAL AQUARIUM LAYOUT */
+    .aquarium-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      gap: 25px;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 1000px) {
+      .aquarium-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .aquarium-card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .aquarium-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .aquarium-title {
+      font-size: 24px;
       font-weight: bold;
+      color: #1e293b;
+      margin-bottom: 5px;
     }
-    hr {
-      border: none;
-      border-top: 1px solid #e5e7eb;
-      margin: 12px 0;
-    }
-    small {
-      color: #6b7280;
-      font-size: 12px;
-    }
-    .servo-title {
-      margin-bottom: 4px;
-      margin-top: 4px;
+
+    .pond-label {
+      display: inline-block;
+      padding: 5px 15px;
+      background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+      color: white;
+      border-radius: 20px;
+      font-size: 14px;
       font-weight: 600;
     }
+
+    /* AQUARIUM THEME */
+    .aquarium-container {
+      background: linear-gradient(180deg, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%);
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Fish animation */
+    .fish {
+      position: absolute;
+      font-size: 25px;
+      animation: swim 8s infinite ease-in-out;
+    }
+
+    @keyframes swim {
+      0%, 100% { transform: translateX(0) scaleX(1); }
+      50% { transform: translateX(150px) scaleX(-1); }
+    }
+
+    /* Gauge container */
+    .gauge-container {
+      position: relative;
+      width: 240px;
+      height: 140px;
+      margin: 15px auto;
+    }
+
+    .gauge-bg {
+      width: 240px;
+      height: 120px;
+    }
+
+    .gauge-needle {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      width: 3px;
+      height: 85px;
+      background: linear-gradient(to top, #ef4444 0%, #f59e0b 50%, #22c55e 100%);
+      transform-origin: bottom center;
+      transform: translateX(-50%) rotate(-90deg);
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .gauge-needle::after {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: -3px;
+      width: 9px;
+      height: 9px;
+      background: #1e293b;
+      border-radius: 50%;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    .gauge-center {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 16px;
+      height: 16px;
+      background: #1e293b;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      z-index: 10;
+    }
+
+    .gauge-labels {
+      position: absolute;
+      bottom: 10px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 15px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    /* Status display */
+    .status-display {
+      text-align: center;
+      margin: 15px 0;
+    }
+
+    .angle-display {
+      font-size: 36px;
+      font-weight: bold;
+      color: #1e293b;
+      margin-bottom: 8px;
+    }
+
+    .status-text {
+      font-size: 16px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 10px;
+      display: inline-block;
+    }
+
+    .status-feeding {
+      background: #dcfce7;
+      color: #16a34a;
+    }
+
+    .status-closed {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    /* Interactive control */
+    .control-section {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .control-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .slider-container {
+      position: relative;
+      padding: 15px 0;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      background: linear-gradient(to right, #22c55e 0%, #f59e0b 50%, #ef4444 100%);
+      border-radius: 5px;
+      outline: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border: 3px solid #3b82f6;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      background: white;
+      border: 3px solid #3b82f6;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .current-angle-info {
+      margin-top: 12px;
+      padding: 8px;
+      background: #f1f5f9;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .current-angle-value {
+      font-weight: bold;
+      color: #1e293b;
+    }
+
+    /* Bubbles animation */
+    .bubble {
+      position: absolute;
+      bottom: 0;
+      width: 8px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      animation: rise 4s infinite ease-in;
+    }
+
+    @keyframes rise {
+      0% {
+        bottom: 0;
+        opacity: 0;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        bottom: 100%;
+        opacity: 0;
+      }
+    }
+
+    .bubble:nth-child(1) { left: 10%; animation-delay: 0s; }
+    .bubble:nth-child(2) { left: 30%; animation-delay: 1s; width: 6px; height: 6px; }
+    .bubble:nth-child(3) { left: 50%; animation-delay: 2s; }
+    .bubble:nth-child(4) { left: 70%; animation-delay: 0.5s; width: 10px; height: 10px; }
+    .bubble:nth-child(5) { left: 85%; animation-delay: 1.5s; }
   </style>
 </head>
 <body>
-  <h2>ESP32 Dual Servo Control</h2>
-
   <!-- LOGIN CARD -->
-  <div id="loginCard" class="card">
-    <h3>Login</h3>
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
-    <button id="loginBtn">Login</button>
-    <button id="signupBtn" class="secondary">Sign up</button>
-    <p id="loginError" style="color:red; min-height: 18px;"></p>
-    <small>
-      Tip: you can create a test account with any email & password using "Sign up".
-    </small>
+  <div id="loginCard" class="login-container">
+    <div class="card">
+      <h2>🐠 Hệ thống cho cá ăn</h2>
+      <p class="subtitle">Quản lý 2 hồ cá từ xa</p>
+      
+      <div class="input-group">
+        <input type="email" id="email" placeholder="Email">
+      </div>
+      <div class="input-group">
+        <input type="password" id="password" placeholder="Mật khẩu">
+      </div>
+      
+      <button id="loginBtn">Đăng nhập</button>
+      <button id="signupBtn">Đăng ký</button>
+      
+      <p id="loginError" class="error"></p>
+    </div>
   </div>
 
-  <!-- CONTROL CARD -->
-  <div id="controlCard" class="card hidden">
-    <p style="margin-top:0;">
-      Logged in as <strong><span id="userEmail"></span></strong>
-    </p>
-    <button id="logoutBtn" class="secondary" style="margin-bottom: 8px;">Logout</button>
-    <hr>
-
-    <!-- Servo 0 -->
-    <div>
-      <div class="servo-title">Servo 0</div>
-      <label for="angleSlider0">
-        Target angle: <span id="angleValue0">90</span>°
-      </label>
-      <input type="range" id="angleSlider0" min="0" max="180" value="90">
-      <p>
-        Current angle (from ESP): <strong><span id="currentAngle0">-</span>°</strong>
-      </p>
+  <!-- CONTROL SECTION -->
+  <div id="controlSection" class="container hidden">
+    <div class="header">
+      <h2>🐠 Hệ thống cho cá ăn tự động</h2>
+      <div class="user-info">
+        <span id="userEmail"></span>
+        <button id="logoutBtn">Đăng xuất</button>
+      </div>
     </div>
 
-    <hr>
+    <div class="aquarium-grid">
+      <!-- HỒ 1 -->
+      <div class="aquarium-card">
+        <div class="aquarium-header">
+          <div class="aquarium-title">🏠 Hồ cá số 1</div>
+          <span class="pond-label">Servo 0</span>
+        </div>
 
-    <!-- Servo 1 -->
-    <div>
-      <div class="servo-title">Servo 1</div>
-      <label for="angleSlider1">
-        Target angle: <span id="angleValue1">90</span>°
-      </label>
-      <input type="range" id="angleSlider1" min="0" max="180" value="90">
-      <p>
-        Current angle (from ESP): <strong><span id="currentAngle1">-</span>°</strong>
-      </p>
+        <div class="aquarium-container">
+          <div class="fish" style="top: 15px;">🐟</div>
+          <div class="fish" style="top: 50px; animation-delay: -4s;">🐠</div>
+          <div class="bubble"></div>
+          <div class="bubble"></div>
+          <div class="bubble"></div>
+          <div class="bubble"></div>
+          <div class="bubble"></div>
+
+          <div class="gauge-container">
+            <svg class="gauge-bg" viewBox="0 0 240 120">
+              <path d="M 20 100 A 100 100 0 0 1 220 100" 
+                    fill="none" 
+                    stroke="#e2e8f0" 
+                    stroke-width="18" 
+                    stroke-linecap="round"/>
+              <path d="M 20 100 A 100 100 0 0 1 120 10" 
+                    fill="none" 
+                    stroke="#22c55e" 
+                    stroke-width="18" 
+                    stroke-linecap="round"
+                    opacity="0.3"/>
+              <path d="M 120 10 A 100 100 0 0 1 220 100" 
+                    fill="none" 
+                    stroke="#ef4444" 
+                    stroke-width="18" 
+                    stroke-linecap="round"
+                    opacity="0.3"/>
+            </svg>
+            <div class="gauge-needle" id="gaugeNeedle0"></div>
+            <div class="gauge-center"></div>
+            <div class="gauge-labels">
+              <span>0°</span>
+              <span>90°</span>
+              <span>180°</span>
+            </div>
+          </div>
+
+          <div class="status-display">
+            <div class="angle-display" id="angleDisplay0">90°</div>
+            <div class="status-text" id="statusText0">Đã đóng</div>
+          </div>
+        </div>
+
+        <div class="control-section">
+          <div class="control-title">🎮 Điều khiển góc mở</div>
+          <div class="slider-container">
+            <input type="range" id="angleSlider0" min="0" max="180" value="90">
+          </div>
+          <div class="current-angle-info">
+            Góc hiện tại: <span class="current-angle-value" id="currentAngle0">-</span>°
+          </div>
+        </div>
+      </div>
+
+      <!-- HỒ 2 -->
+      <div class="aquarium-card">
+        <div class="aquarium-header">
+          <div class="aquarium-title">🏠 Hồ cá số 2</div>
+          <span class="pond-label">Servo 1</span>
+        </div>
+
+        <div class="aquarium-container">
+          <div class="fish" style="top: 15px; animation-delay: -2s;">🐡</div>
+          <div class="fish" style="top: 50px; animation-delay: -6s;">🐠</div>
+          <div class="bubble"></div>
+          <div class="bubble"></div>
+          <div class="bubble"></div>
+          <div class="bubble"></div>
+          <div class="bubble"></div>
+
+          <div class="gauge-container">
+            <svg class="gauge-bg" viewBox="0 0 240 120">
+              <path d="M 20 100 A 100 100 0 0 1 220 100" 
+                    fill="none" 
+                    stroke="#e2e8f0" 
+                    stroke-width="18" 
+                    stroke-linecap="round"/>
+              <path d="M 20 100 A 100 100 0 0 1 120 10" 
+                    fill="none" 
+                    stroke="#22c55e" 
+                    stroke-width="18" 
+                    stroke-linecap="round"
+                    opacity="0.3"/>
+              <path d="M 120 10 A 100 100 0 0 1 220 100" 
+                    fill="none" 
+                    stroke="#ef4444" 
+                    stroke-width="18" 
+                    stroke-linecap="round"
+                    opacity="0.3"/>
+            </svg>
+            <div class="gauge-needle" id="gaugeNeedle1"></div>
+            <div class="gauge-center"></div>
+            <div class="gauge-labels">
+              <span>0°</span>
+              <span>90°</span>
+              <span>180°</span>
+            </div>
+          </div>
+
+          <div class="status-display">
+            <div class="angle-display" id="angleDisplay1">90°</div>
+            <div class="status-text" id="statusText1">Đã đóng</div>
+          </div>
+        </div>
+
+        <div class="control-section">
+          <div class="control-title">🎮 Điều khiển góc mở</div>
+          <div class="slider-container">
+            <input type="range" id="angleSlider1" min="0" max="180" value="90">
+          </div>
+          <div class="current-angle-info">
+            Góc hiện tại: <span class="current-angle-value" id="currentAngle1">-</span>°
+          </div>
+        </div>
+      </div>
     </div>
-
-    <hr>
-    <small>Changes are sent in real time via Firebase Realtime Database.</small>
   </div>
 
-  <!-- Firebase SDKs (compat version for simplicity) -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
   <script>
-    // ===== FIREBASE CONFIG: REPLACE THIS WITH YOUR OWN FROM FIREBASE CONSOLE =====
-      const firebaseConfig = {
-        apiKey: "AIzaSyCtUrdjYNlQf6036nIucjAtf8De6sgX7qQ",
-        authDomain: "esp32-2servo.firebaseapp.com",
-        databaseURL: "https://esp32-2servo-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "esp32-2servo",
-        storageBucket: "esp32-2servo.firebasestorage.app",
-        messagingSenderId: "236871220532",
-        appId: "1:236871220532:web:6569e9ea09d2f544dff961"
-      };
-    // ============================================================================
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCtUrdjYNlQf6036nIucjAtf8De6sgX7qQ",
+      authDomain: "esp32-2servo.firebaseapp.com",
+      databaseURL: "https://esp32-2servo-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "esp32-2servo",
+      storageBucket: "esp32-2servo.firebasestorage.app",
+      messagingSenderId: "236871220532",
+      appId: "1:236871220532:web:6569e9ea09d2f544dff961"
+    };
 
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
 
-    const DEVICE_ID = "device1"; // must match ESP32's DEVICE_ID
+    const DEVICE_ID = "device1";
 
-    // ===== DOM ELEMENTS =====
+    // DOM Elements
     const loginCard = document.getElementById('loginCard');
-    const controlCard = document.getElementById('controlCard');
-
+    const controlSection = document.getElementById('controlSection');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
     const loginBtn = document.getElementById('loginBtn');
     const signupBtn = document.getElementById('signupBtn');
     const loginError = document.getElementById('loginError');
-
     const userEmailSpan = document.getElementById('userEmail');
     const logoutBtn = document.getElementById('logoutBtn');
 
+    // Servo 0 elements
     const angleSlider0 = document.getElementById('angleSlider0');
-    const angleValue0 = document.getElementById('angleValue0');
+    const angleDisplay0 = document.getElementById('angleDisplay0');
+    const statusText0 = document.getElementById('statusText0');
     const currentAngleSpan0 = document.getElementById('currentAngle0');
+    const gaugeNeedle0 = document.getElementById('gaugeNeedle0');
 
+    // Servo 1 elements
     const angleSlider1 = document.getElementById('angleSlider1');
-    const angleValue1 = document.getElementById('angleValue1');
+    const angleDisplay1 = document.getElementById('angleDisplay1');
+    const statusText1 = document.getElementById('statusText1');
     const currentAngleSpan1 = document.getElementById('currentAngle1');
+    const gaugeNeedle1 = document.getElementById('gaugeNeedle1');
 
-    // ===== AUTH STATE LISTENER =====
+    // Update UI based on angle
+    function updateUI(servoIndex, angle) {
+      const angleDisplay = servoIndex === 0 ? angleDisplay0 : angleDisplay1;
+      const statusText = servoIndex === 0 ? statusText0 : statusText1;
+      const gaugeNeedle = servoIndex === 0 ? gaugeNeedle0 : gaugeNeedle1;
+
+      angleDisplay.textContent = angle + '°';
+      
+      // Update gauge needle (0° = -90deg, 180° = +90deg)
+      const rotation = (angle - 90);
+      gaugeNeedle.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
+      
+      // Update status
+      if (angle < 90) {
+        statusText.textContent = '🍽️ Cá đang ăn';
+        statusText.className = 'status-text status-feeding';
+      } else {
+        statusText.textContent = '🚫 Đã đóng';
+        statusText.className = 'status-text status-closed';
+      }
+    }
+
+    // Auth State Listener
     auth.onAuthStateChanged(user => {
       if (user) {
-        // Logged in
         loginCard.classList.add('hidden');
-        controlCard.classList.remove('hidden');
+        controlSection.classList.remove('hidden');
         userEmailSpan.textContent = user.email;
         attachDatabaseListeners();
       } else {
-        // Logged out
-        controlCard.classList.add('hidden');
+        controlSection.classList.add('hidden');
         loginCard.classList.remove('hidden');
       }
     });
 
-    // ===== LOGIN =====
+    // Login
     loginBtn.onclick = () => {
       const email = emailInput.value.trim();
       const pass = passwordInput.value.trim();
       loginError.textContent = "";
       if (!email || !pass) {
-        loginError.textContent = "Please enter email and password.";
+        loginError.textContent = "Vui lòng nhập email và mật khẩu";
         return;
       }
       auth.signInWithEmailAndPassword(email, pass)
@@ -199,13 +676,13 @@
         });
     };
 
-    // ===== SIGNUP =====
+    // Signup
     signupBtn.onclick = () => {
       const email = emailInput.value.trim();
       const pass = passwordInput.value.trim();
       loginError.textContent = "";
       if (!email || !pass) {
-        loginError.textContent = "Please enter email and password.";
+        loginError.textContent = "Vui lòng nhập email và mật khẩu";
         return;
       }
       auth.createUserWithEmailAndPassword(email, pass)
@@ -214,41 +691,38 @@
         });
     };
 
-    // ===== LOGOUT =====
+    // Logout
     logoutBtn.onclick = () => auth.signOut();
 
-    // ===== SLIDER EVENTS: WRITE TARGET ANGLE TO DB =====
+    // Slider Control - Servo 0
     angleSlider0.oninput = () => {
       const val = parseInt(angleSlider0.value);
-      angleValue0.textContent = val;
+      updateUI(0, val);
       db.ref('devices/' + DEVICE_ID + '/servo0/targetAngle').set(val);
     };
 
+    // Slider Control - Servo 1
     angleSlider1.oninput = () => {
       const val = parseInt(angleSlider1.value);
-      angleValue1.textContent = val;
+      updateUI(1, val);
       db.ref('devices/' + DEVICE_ID + '/servo1/targetAngle').set(val);
     };
 
-    // ===== ATTACH REALTIME LISTENERS =====
+    // Database Listeners
     function attachDatabaseListeners() {
       // Servo 0 targetAngle
       db.ref('devices/' + DEVICE_ID + '/servo0/targetAngle').on('value', snap => {
         const val = snap.val();
         if (typeof val === 'number') {
           angleSlider0.value = val;
-          angleValue0.textContent = val;
+          updateUI(0, val);
         }
       });
 
-      // Servo 0 currentAngle (from ESP)
+      // Servo 0 currentAngle
       db.ref('devices/' + DEVICE_ID + '/servo0/currentAngle').on('value', snap => {
         const val = snap.val();
-        if (typeof val === 'number') {
-          currentAngleSpan0.textContent = val;
-        } else {
-          currentAngleSpan0.textContent = '-';
-        }
+        currentAngleSpan0.textContent = typeof val === 'number' ? val : '-';
       });
 
       // Servo 1 targetAngle
@@ -256,20 +730,20 @@
         const val = snap.val();
         if (typeof val === 'number') {
           angleSlider1.value = val;
-          angleValue1.textContent = val;
+          updateUI(1, val);
         }
       });
 
-      // Servo 1 currentAngle (from ESP)
+      // Servo 1 currentAngle
       db.ref('devices/' + DEVICE_ID + '/servo1/currentAngle').on('value', snap => {
         const val = snap.val();
-        if (typeof val === 'number') {
-          currentAngleSpan1.textContent = val;
-        } else {
-          currentAngleSpan1.textContent = '-';
-        }
+        currentAngleSpan1.textContent = typeof val === 'number' ? val : '-';
       });
     }
+
+    // Initialize UI
+    updateUI(0, 90);
+    updateUI(1, 90);
   </script>
 </body>
 </html>
